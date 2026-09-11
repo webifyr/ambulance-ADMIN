@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f2f46">
+  <title>אמבולנס עירון | Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo1.png?v=3">
+<link rel="shortcut icon" href="/assets/logo1.png?v=3">
+</head>
+<body>
+<main class="admin-shell">
+  <section id="loginCard" class="login-card">
+    <img src="assets/logo.jpeg" alt="אמבולנס עירון">
+    <span>לוח הניהול של אמבולנס עירון</span><h1>כניסת מנהל</h1>
+    <form id="loginForm"><input id="adminPassword" type="password" required placeholder="סיסמה"><button>כניסה</button><p id="loginMessage"></p></form>
+    <a href="index.html">חזרה לאתר</a>
+  </section>
+
+  <section id="dashboard" class="dashboard" hidden>
+    <header class="admin-header">
+      <div><span>אמבולנס עירון</span><h1>מרכז הניהול</h1></div>
+      <div class="actions"><input id="search" placeholder="חיפוש לפי שם או מספר"><button id="logoutBtn">התנתקות</button></div>
+    </header>
+
+        <section class="wa-reminder-settings" aria-label="הגדרות תזכורת WhatsApp">
+      <div class="wa-reminder-copy"><span class="wa-dot"></span><div><strong>תזכורת WhatsApp להודעות שממתינות</strong><small>אם שיחה נשארת ללא פתיחה או מענה, תופיע תזכורת מוכנה לשליחה ב-WhatsApp.</small></div></div>
+      <div class="wa-reminder-controls">
+        <label>מספר WhatsApp<input id="reminderWhatsAppNumber" inputmode="tel" autocomplete="tel" placeholder="0549496626"></label>
+        <label>אחרי<select id="reminderDelay"><option value="1">דקה 1</option><option value="3" selected>3 דקות</option><option value="5">5 דקות</option><option value="10">10 דקות</option><option value="15">15 דקות</option></select></label>
+        <button id="saveReminderSettings" type="button">שמירה</button>
+      </div>
+    </section>
+
+    
+    <section class="chat-alert-settings" aria-label="התראות שיחות">
+      <div class="chat-alert-copy"><span class="chat-alert-icon">🔔</span><div><strong>התראה מיידית להודעות חדשות</strong><small>צליל + התראת דפדפן + פס בולט כאשר ממתינה הודעה חדשה.</small></div></div>
+      <button id="enableChatNotifications" type="button">הפעלת התראות בדפדפן</button>
+    </section>
+
+    <div id="unansweredChatBar" class="unanswered-chat-bar" hidden>
+      <div class="unanswered-chat-main">
+        <span class="unanswered-pulse"></span>
+        <div><strong id="unansweredChatTitle">הודעה ממתינה למענה</strong><small id="unansweredChatText">יש אדם ששלח הודעה ועדיין לא קיבל מענה.</small></div>
+      </div>
+      <button id="showUnansweredChats" type="button">פתיחת שיחות</button>
+    </div>
+
+    <div id="whatsappReminderBar" class="whatsapp-reminder-bar" hidden>
+      <div><span class="reminder-bell">!</span><div><strong id="reminderTitle">שיחות שדורשות מעקב</strong><small id="reminderText">יש שיחות שלא נפתחו או שלא נענו.</small></div></div>
+      <a id="openReminderWhatsApp" href="#" target="_blank" rel="noopener">פתיחת WhatsApp ושליחת תזכורת</a>
+    </div>
+
+    <nav class="admin-tabs">
+      <button class="active" data-tab="requests">בקשות מהאתר <b id="requestTabCount">0</b></button>
+      <button data-tab="chats">שיחות <b id="chatTabCount">0</b></button>
+      <button data-tab="locations">מיקומים <b id="locationTabCount">0</b></button>
+      <button data-tab="locator">איתור מיקום <b id="locatorTabCount">0</b></button>
+      <button data-tab="email">התראות אימייל <b id="emailTabCount">0</b></button>
+      <button data-tab="checks">בדיקות אמבולנס <b id="checkTabCount">0</b></button>
+      <button data-tab="products">מכירת ציוד <b id="productTabCount">0</b></button>
+      <button data-tab="donations">תרומות <b id="donationTabCount">0</b></button>
+    </nav>
+
+    <section id="requestsTab" class="tab-pane active">
+      <div class="summary"><div><b id="allCount">0</b><span>כל הבקשות</span></div><div><b id="newCount">0</b><span>בקשות חדשות</span></div><div><b id="doneCount">0</b><span>הושלמו</span></div></div>
+      <div id="requestsList" class="requests"></div>
+    </section>
+
+    <section id="locationsTab" class="tab-pane">
+      <div class="locations-head"><div><h2>מיקומי פניות</h2><p>מיקומים שמשתמשים שיתפו לאחר אישור מהמכשיר שלהם.</p></div><span id="activeLocations">0 מיקומים פעילים</span></div>
+      <div id="locationsList" class="locations-list"></div>
+    </section>
+
+
+
+    <section id="locatorTab" class="tab-pane">
+      <div class="locator-manager">
+        <div class="locator-manager-head">
+          <div><span class="locator-kicker">LIVE LOCATION</span><h2>איתור מיקום באמצעות קישור</h2><p>צור קישור מאובטח ושלח אותו לאדם. לאחר שהמשתמש יאשר שיתוף מיקום, המיקום שלו יופיע כאן בזמן אמת.</p></div>
+          <span class="locator-live-label">● מיקום חי</span>
+        </div>
+        <div class="locator-create-card">
+          <div class="locator-create-title"><span class="locator-create-icon">📍</span><div><h3>יצירת קישור לשיתוף מיקום</h3><p>הזן שם ומספר טלפון ושלח את הקישור למשתמש.</p></div></div>
+          <form id="locationShareForm" class="locator-form">
+            <label>שם האדם<input id="locationShareName" type="text" maxlength="80" placeholder="שם מלא"></label>
+            <label>מספר טלפון<input id="locationSharePhone" type="tel" required placeholder="05X-XXXXXXX"></label>
+            <button id="createLocationShareBtn" type="submit">📍 יצירת קישור</button>
+          </form>
+          <div id="locationShareResult" class="location-share-result" hidden>
+            <div class="location-share-result-head"><div><strong>הקישור מוכן לשליחה</strong><span id="locationSharePerson"></span></div></div>
+            <div class="location-link-field"><div><input id="locationShareUrl" type="text" readonly><button id="copyLocationShareBtn" type="button">העתקה</button></div></div>
+            <div class="location-share-actions"><a id="sendLocationWhatsAppBtn" href="#" target="_blank" rel="noopener">WhatsApp</a><a id="sendLocationSmsBtn" href="#">SMS</a><button id="openLocationShareBtn" type="button">פתיחת הקישור</button></div>
+          </div>
+        </div>
+        <div class="locator-sessions">
+          <div class="locator-sessions-head"><div><h3>שיתופי מיקום</h3><p>מיקומים חיים וקישורים שנוצרו.</p></div><span id="liveLocationCount">0 פעילים</span></div>
+          <div id="locationSessionsList" class="location-sessions-list"><div class="location-session-empty">עדיין לא נוצרו קישורי שיתוף מיקום.</div></div>
+        </div>
+        <div class="location-privacy-note"><strong>🔒 פרטיות ואישור</strong><span>לא ניתן לקבל מיקום ללא אישור. המיקום מתחיל להישלח רק לאחר שהמשתמש פותח את הקישור ומאשר הרשאת מיקום.</span></div>
+      </div>
+    </section>
+
+    <section id="emailTab" class="tab-pane">
+      <div class="email-manager">
+        <div class="email-manager-head">
+          <div><span class="email-manager-kicker">EMAIL ALERTS</span><h2>ניהול כתובות להתראות</h2><p>אפשר להוסיף כמה כתובות. רק כתובות פעילות יקבלו התראה, ורק עבור ההודעה הראשונה בכל שיחה.</p></div>
+          <label class="email-master-switch"><input id="emailAlertsMaster" type="checkbox" checked><span>התראות אימייל פעילות</span></label>
+        </div>
+        <form id="emailRecipientForm" class="email-recipient-form">
+          <input id="emailRecipientId" type="hidden">
+          <label>כתובת אימייל<input id="emailRecipientAddress" type="email" autocomplete="email" required placeholder="name@example.com"></label>
+          <label>שם / תיאור<input id="emailRecipientLabel" type="text" maxlength="50" placeholder="לדוגמה: מנהל משמרת"></label>
+          <div class="email-form-actions"><button id="saveEmailRecipient" type="submit">הוספת אימייל</button><button id="cancelEmailEdit" type="button" hidden>ביטול עריכה</button></div>
+        </form>
+        <div id="emailRecipientsList" class="email-recipients-list"></div>
+        <div class="email-alert-note"><strong>איך זה עובד?</strong><span>כאשר מבקר מתחיל שיחה ושולח את ההודעה הראשונה, המערכת שולחת מייל אחד לכל הכתובות הפעילות. הודעות נוספות באותה שיחה לא יוצרות מיילים נוספים.</span></div>
+      </div>
+    </section>
+
+
+    <section id="checksTab" class="tab-pane">
+      <div class="checks-manager">
+        <div class="checks-manager-head">
+          <div><span class="checks-kicker">AMBULANCE CHECKS</span><h2>בדיקות אמבולנס</h2><p>היסטוריית הבדיקות, מי ביצע אותן, תאריך, שעה וחוסרים.</p></div>
+          <a class="open-check-page" href="ambulance-check.html" target="_blank" rel="noopener">+ פתיחת בדיקת אמבולנס</a>
+        </div>
+        <div id="ambulanceChecksList" class="ambulance-checks-list"><div class="checks-empty">עדיין לא נשמרו בדיקות אמבולנס.</div></div>
+      </div>
+    </section>
+
+
+
+    <section id="productsTab" class="tab-pane">
+      <div class="products-manager">
+        <div class="products-manager-head">
+          <div><span class="products-kicker">PRODUCT MANAGER</span><h2>ניהול מוצרים למכירה</h2><p>הוסף, ערוך, השבת או מחק מוצרים שמופיעים בעמוד מכירת הציוד.</p></div>
+          <a class="open-products-page" href="https://ambulance-eron.web.app/products.html" target="_blank" rel="noopener">פתיחת עמוד המוצרים</a>
+        </div>
+
+        <form id="productAdminForm" class="product-admin-form">
+          <input id="productEditId" type="hidden">
+          <div class="product-form-grid">
+            <label>שם המוצר בעברית<input id="productNameHe" type="text" required maxlength="120" placeholder="לדוגמה: תיק חובש מקצועי"></label>
+            <label>שם בערבית<input id="productNameAr" type="text" maxlength="120" placeholder="اختياري"></label>
+            <label>שם באנגלית<input id="productNameEn" type="text" maxlength="120" placeholder="Optional"></label>
+            <label class="wide">תיאור בעברית<textarea id="productDescHe" rows="3" required maxlength="700" placeholder="תיאור קצר וברור של המוצר"></textarea></label>
+            <label class="wide">תיאור בערבית<textarea id="productDescAr" rows="2" maxlength="700" placeholder="اختياري"></textarea></label>
+            <label class="wide">תיאור באנגלית<textarea id="productDescEn" rows="2" maxlength="700" placeholder="Optional"></textarea></label>
+            <label>מחיר / טקסט מחיר<input id="productPrice" type="text" maxlength="60" placeholder="לדוגמה: 299 ₪ או לקבלת מחיר פנו אלינו"></label>
+            <label>סדר תצוגה<input id="productOrder" type="number" min="0" step="1" value="100"></label>
+            <label class="wide">תכולה / פריטים <textarea id="productItems" rows="5" placeholder="כל שורה = פריט אחד
+תחבושות
+כפפות
+גזה סטרילית"></textarea></label>
+            <label class="product-image-field">תמונה 1<input id="productImage1" type="file" accept="image/*"><small id="productImage1Status">חובה במוצר חדש</small></label>
+            <label class="product-image-field">תמונה 2<input id="productImage2" type="file" accept="image/*"><small id="productImage2Status">אופציונלי</small></label>
+            <label class="product-active-field"><input id="productActive" type="checkbox" checked><span>המוצר פעיל ומוצג באתר</span></label>
+          </div>
+          <div class="product-form-actions">
+            <button id="saveProductBtn" type="submit">+ הוספת מוצר</button>
+            <button id="cancelProductEditBtn" type="button" hidden>ביטול עריכה</button>
+          </div>
+          <div id="productUploadProgress" class="product-upload-progress" hidden>מעלה תמונות ושומר מוצר...</div>
+        </form>
+
+        <div id="adminProductsList" class="admin-products-list"><div class="products-empty">עדיין לא נוספו מוצרים דרך לוח הניהול.</div></div>
+      </div>
+    </section>
+
+
+    <section id="donationsTab" class="tab-pane">
+      <div class="donations-manager">
+        <div class="donations-manager-head">
+          <div><span class="donations-kicker">DONATIONS</span><h2>בקשות תרומה</h2><p>בקשות שנשלחו מעמוד התרומה באתר. ניתן ליצור קשר, לעדכן סטטוס ולמחוק.</p></div>
+          <a class="open-donation-page" href="donation.html" target="_blank" rel="noopener">פתיחת עמוד התרומה</a>
+        </div>
+        <div class="donation-summary"><div><b id="donationsTotalCount">0</b><span>בקשות</span></div><div><b id="donationsNewCount">0</b><span>חדשות</span></div><div><b id="donationsTotalAmount">0₪</b><span>סכום מבוקש</span></div></div>
+        <div id="adminDonationsList" class="admin-donations-list"><div class="donations-empty">עדיין לא התקבלו בקשות תרומה.</div></div>
+      </div>
+    </section>
+
+    <section id="chatsTab" class="tab-pane">
+      <div id="chatAdminGrid" class="chat-admin-grid">
+        <aside class="chat-list-panel">
+          <div class="panel-title"><div><h2>שיחות</h2><p>הודעות מבקרים ישירות מהאתר</p></div><span id="openChats">0 פתוחות</span></div>
+          <div id="chatList" class="chat-list"></div>
+        </aside>
+
+        <section class="chat-room">
+          <div id="chatEmpty" class="chat-empty"><div>💬</div><h3>בחר שיחה</h3><p>לחץ על שם המבקר כדי להציג הודעות ולהשיב.</p></div>
+          <div id="chatRoomContent" class="chat-room-content" hidden>
+            <header class="room-header">
+              <button id="chatBackBtn" class="chat-back" type="button" aria-label="חזרה">→</button>
+              <div class="room-person"><h2 id="roomName">—</h2><p><span id="roomPhone">—</span> · <span id="roomStatus">—</span></p></div>
+              <div class="room-tools">
+                <a id="roomCall" class="room-icon-btn" href="#" title="חיוג">☎</a>
+                <a id="roomWhatsApp" class="room-icon-btn" href="#" target="_blank" rel="noopener" title="WhatsApp">WA</a>
+                <select id="roomStatusSelect" title="סטטוס השיחה"><option value="open">פתוחה</option><option value="closed">סגורה</option></select>
+                <button id="deleteChatBtn" class="room-delete-btn" type="button" title="מחיקת שיחה">מחיקה</button>
+                <button id="closeRoomBtn" class="room-icon-btn close-room-desktop" type="button" title="סגירת תצוגה">×</button>
+              </div>
+            </header>
+            <div id="adminMessages" class="admin-messages"></div>
+            <form id="adminReplyForm" class="reply-form">
+              <textarea id="adminReply" maxlength="1000" required placeholder="כתוב תשובה כאן..."></textarea>
+              <button type="submit">שליחת תשובה</button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </section>
+  </section>
+</main>
+<div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
+
+<nav class="admin-mobile-bar" aria-label="סרגל ניהול">
+  <button class="active" data-mobile-tab="requests"><span>▤</span><b>בקשות</b></button>
+  <button data-mobile-tab="chats"><span>💬</span><b>שיחות</b><em id="mobileReminderBadge" hidden>!</em></button>
+  <button data-mobile-tab="locations"><span>📍</span><b>מיקומים</b></button>
+  <button data-mobile-tab="locator"><span>⌖</span><b>איתור</b></button>
+  <button data-mobile-tab="email"><span>✉</span><b>אימייל</b></button>
+  <button data-mobile-tab="checks"><span>✓</span><b>בדיקות</b></button>
+  <button data-mobile-tab="donations"><span>♥</span><b>תרומות</b></button>
+  <a href="index.html"><span>⌂</span><b>אתר</b></a>
+  <button id="mobileLogoutBtn"><span>↪</span><b>יציאה</b></button>
+</nav>
+
+<script type="module" src="admin.js?v=20260907-ambulance-checks"></script>
+</body>
+</html>

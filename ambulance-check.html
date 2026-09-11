@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f2f46">
+  <title>בדיקת אמבולנס | אמבולנס עירון</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="ambulance-check.css">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/logo1.png?v=3">
+<link rel="shortcut icon" href="/assets/logo1.png?v=3">
+</head>
+<body>
+  <main class="check-shell">
+    <section id="checkLogin" class="check-login">
+      <img src="assets/logo.jpeg" alt="אמבולנס עירון">
+      <span>אמבולנס עירון</span>
+      <h1>בדיקת אמבולנס</h1>
+      <p>העמוד מיועד למנהל בלבד.</p>
+      <form id="checkLoginForm">
+        <input id="checkPassword" type="password" required placeholder="סיסמת מנהל" autocomplete="current-password">
+        <button type="submit">כניסה</button>
+        <small id="checkLoginMessage"></small>
+      </form>
+      <a href="admin.html">חזרה ללוח הניהול</a>
+    </section>
+
+    <section id="checkApp" class="check-app" hidden>
+      <header class="check-header">
+        <div>
+          <span>אמבולנס עירון</span>
+          <h1>טופס בדיקת אמבולנס</h1>
+          <p>יש לרשום כמות שנבדקה לפני סימון ✓.</p>
+        </div>
+        <div class="check-header-actions">
+          <a href="admin.html">לוח הניהול</a>
+          <button id="checkLogoutBtn" type="button">התנתקות</button>
+        </div>
+      </header>
+
+      <form id="ambulanceCheckForm" class="check-form">
+        <section class="check-meta-card">
+          <label>שם הבודק
+            <input id="inspectorName" type="text" maxlength="80" required placeholder="שם מלא">
+          </label>
+          <label>מספר אמבולנס / רכב
+            <input id="ambulanceNumber" type="text" maxlength="30" required placeholder="לדוגמה: 51 / מספר רכב">
+          </label>
+          <label>הערות כלליות
+            <input id="generalNotes" type="text" maxlength="250" placeholder="לא חובה">
+          </label>
+        </section>
+
+        <div id="checkSections"></div>
+
+        <section class="special-card">
+          <h2>פרטי דפיברילטור</h2>
+          <div class="special-grid">
+            <label>מספר סידורי
+              <input id="defibSerial" type="text" maxlength="80" placeholder="מספר סידורי">
+            </label>
+            <label>תוקף מדבקות
+              <input id="padsExpiry" type="date">
+            </label>
+          </div>
+        </section>
+
+        <section class="check-submit-card">
+          <div>
+            <strong id="completionText">0 / 0 פריטים סומנו</strong>
+            <span id="shortageText">הזן כמות לכל פריט ולאחר מכן סמן ✓ אם הוא קיים.</span>
+          </div>
+          <button id="submitCheckBtn" type="submit">שמירת בדיקת האמבולנס</button>
+        </section>
+      </form>
+    </section>
+  </main>
+
+  <div id="checkToast" class="check-toast" role="status" aria-live="polite"></div>
+  <script type="module" src="ambulance-check.js?v=20260907-1"></script>
+</body>
+</html>

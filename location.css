@@ -3,3 +3,6 @@
 .quick-location{width:100%;min-height:68px;margin:18px 0 4px;border:0;border-radius:18px;background:#10a66f;color:#fff;font-size:18px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 14px 32px rgba(0,0,0,.22)}.quick-location:active{transform:scale(.985)}.quick-location:disabled{opacity:.65;cursor:wait}.quick-icon{font-size:24px}.quick-location+#t-quick{font-weight:900}@media(max-width:560px){.quick-location{min-height:64px;font-size:17px;margin-top:14px}}
 
 .status:empty{display:none}
+
+/* FINAL10: no location status/error banner */
+#status,.status{display:none!important}

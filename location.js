@@ -12,6 +12,8 @@ let watchId = null;
 let busy = false;
 let hasFix = false;
 let retryTimer = null;
+let authReady = null;
+let retryCount = 0;
 
 const i18n = {
   he:{dir:'rtl',title:'שיתוף מיקום עם צוות האמבולנס',sub:'המערכת מנסה לאתר ולשתף את המיקום שלך באופן אוטומטי כדי לחסוך זמן במקרה חירום.',name:'שם',phone:'מספר טלפון',btn:'📍 נסה שוב לשתף מיקום',idle:'🔴 לא ניתן לאתר את המיקום. לחץ שוב וודא ש-GPS פעיל',finding:'🟡 מאתר את המיקום שלך...',ok:'🟢 המיקום שותף בהצלחה וממשיך להתעדכן',denied:'גישה למיקום נחסמה. יש לאפשר Location לאתר בהגדרות הדפדפן ולנסות שוב.',unavailable:'לא הצלחנו לקבל מיקום. הפעל GPS/Location ונסה שוב.',timeout:'איתור המיקום לקח יותר מדי זמן. נסה שוב במקום פתוח.',invalid:'הקישור אינו תקין או שפג תוקפו.',secure:'המיקום משמש רק לצורך איתור הפנייה ומתן השירות.',back:'חזרה לאתר'},
@@ -30,17 +32,21 @@ function geoError(err){
     status(t('denied'),'error');
     return;
   }
-  // iPhone/Samsung can fail a high-accuracy GPS request indoors. Retry once using
-  // Wi-Fi/cell positioning instead of showing an error immediately.
-  if(!hasFix){
+  // Do not fail immediately on mobile: try a cached/network fix, then a fresh fix.
+  if(!hasFix && retryCount < 2){
+    retryCount++;
     status(t('finding'),'finding');
     clearTimeout(retryTimer);
-    retryTimer=setTimeout(()=>requestPosition(false),900);
+    retryTimer=setTimeout(()=>requestPosition(false),700);
     return;
   }
   status(err?.code===3?t('timeout'):t('unavailable'),'error');
 }
 async function savePosition(pos){
+  // Geolocation must be requested immediately from the user's tap on iOS.
+  // Authentication can finish in parallel; wait for it only when saving.
+  try { if (authReady) await authReady; else if (!auth.currentUser) await signInAnonymously(auth); }
+  catch(e){ console.error('Anonymous auth failed', e); }
   const c=pos.coords;
   await updateDoc(doc(db,'locationShares',shareId),{
     status:'live', sharing:true, latitude:c.latitude, longitude:c.longitude,
@@ -74,13 +80,15 @@ async function startLocation(){
   if(!shareId){status(t('invalid'),'error'); return;}
   if(!window.isSecureContext){status('יש לפתוח את הקישור דרך HTTPS כדי לאפשר GPS.','error'); return;}
   if(!navigator.geolocation){status(t('unavailable'),'error'); return;}
-  busy=true; $('shareBtn').disabled=true; status(t('finding'),'finding');
-  try { if(!auth.currentUser) await signInAnonymously(auth); }
-  catch(e){ console.error(e); }
+  busy=true; retryCount=0; $('shareBtn').disabled=true; status(t('finding'),'finding');
 
-  // Works on Safari/iPhone and Samsung Internet/Chrome. The OS/browser itself
-  // still controls the one-time permission prompt; a website cannot bypass it.
-  requestPosition(true);
+  // IMPORTANT FOR iPHONE / SAMSUNG:
+  // Start the browser permission/GPS request synchronously from the tap.
+  // Never await Firebase/network work before navigator.geolocation.
+  if(!auth.currentUser && !authReady){
+    authReady=signInAnonymously(auth).catch(e=>{ console.error(e); return null; });
+  }
+  requestPosition(false);
 }
 
 $('shareBtn').addEventListener('click',startLocation);

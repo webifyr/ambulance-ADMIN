@@ -1,0 +1,1 @@
+FINAL9: hides the on-page red location-permission-denied warning. The browser/iOS permission prompt itself is controlled by the browser and cannot be hidden by the website. One-tap location sharing remains enabled.

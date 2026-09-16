@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.token.email == "admin@ambulance-eron.com"; }
+    function chatOwner(chatId) { return signedIn() && get(/databases/$(database)/documents/chats/$(chatId)).data.ownerUid == request.auth.uid; }
+
+    match /requests/{requestId} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','name','phone','service','message','status','source','createdAt'])
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 25
+        && request.resource.data['service'].size() >= 1 && request.resource.data['service'].size() <= 120
+        && request.resource.data.message.size() <= 1500 && request.resource.data.status == 'new'
+        && request.resource.data.source == 'website' && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if admin();
+    }
+
+    match /chats/{chatId} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','name','phone','language','status','lastMessage','lastSender','adminMessageCount','visitorMessageCount','unreadForAdmin','createdAt','updatedAt'])
+        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 80
+        && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 25
+        && request.resource.data.language in ['he','ar','en'] && request.resource.data.status == 'open'
+        && request.resource.data.lastSender == 'visitor' && request.resource.data.adminMessageCount == 0
+        && request.resource.data.visitorMessageCount == 1 && request.resource.data.unreadForAdmin == 1
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+      allow read: if admin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow update: if admin() || (signedIn() && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid && request.resource.data.name == resource.data.name
+        && request.resource.data.phone == resource.data.phone && request.resource.data.language == resource.data.language
+        && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.adminMessageCount == resource.data.adminMessageCount
+        && request.resource.data.lastSender == 'visitor' && request.resource.data.lastMessage.size() >= 1
+        && request.resource.data.lastMessage.size() <= 2000 && request.resource.data.visitorMessageCount == resource.data.visitorMessageCount + 1
+        && request.resource.data.unreadForAdmin == resource.data.unreadForAdmin + 1 && request.resource.data.status == 'open'
+        && request.resource.data.updatedAt == request.time);
+      allow delete: if admin();
+      match /messages/{messageId} {
+        allow read: if admin() || chatOwner(chatId);
+        allow create: if admin() || (chatOwner(chatId) && request.resource.data.keys().hasOnly(['text','sender','createdAt','systemStart'])
+          && request.resource.data.sender == 'visitor' && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 2000 && request.resource.data.createdAt == request.time);
+        allow update, delete: if admin();
+      }
+    }
+
+    match /settings/{settingId} { allow read, create, update, delete: if admin(); }
+
+    match /locations/{locationId} {
+      allow create: if signedIn() && locationId == request.auth.uid && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','name','phone','latitude','longitude','accuracy','status','source','createdAt','updatedAt'])
+        && request.resource.data.name.size() <= 80 && request.resource.data.phone.size() <= 25
+        && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
+        && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180
+        && request.resource.data.accuracy >= 0 && request.resource.data.status == 'active'
+        && request.resource.data.source == 'emergency-location-link';
+      allow read: if admin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+      allow update: if admin() || (signedIn() && locationId == request.auth.uid && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid && request.resource.data.latitude >= -90
+        && request.resource.data.latitude <= 90 && request.resource.data.longitude >= -180
+        && request.resource.data.longitude <= 180 && request.resource.data.accuracy >= 0);
+      allow delete: if admin();
+    }
+
+    match /locationShares/{shareId} {
+      allow list: if admin();
+      allow get: if true;
+      allow create, delete: if admin();
+      allow update: if admin() || (signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['latitude','longitude','accuracy','status','sharing','lastUpdate','openedAt','stoppedAt','userAgent','updatedAtClient'])
+        && request.resource.data.name == resource.data.name
+        && request.resource.data.phone == resource.data.phone
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.latitude is number && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
+        && request.resource.data.longitude is number && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180
+        && request.resource.data.accuracy is number && request.resource.data.accuracy >= 0
+        && request.resource.data.status in ['waiting','requesting_permission','active','stopped']
+        && request.resource.data.sharing == true);
+    }
+
+    match /ambulanceChecks/{checkId} { allow read, create, update, delete: if admin(); }
+    match /products/{productId} { allow read: if true; allow create, update, delete: if admin(); }
+    match /galleryItems/{galleryId} { allow read: if true; allow create, update, delete: if admin(); }
+    match /donations/{donationId} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['ownerUid','amount','currency','name','phone','email','note','anonymous','language','status','source','createdAt','createdAtClient'])
+        && request.resource.data.amount >= 1 && request.resource.data.amount <= 100000 && request.resource.data.currency == 'ILS'
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 100
+        && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 25
+        && request.resource.data.email.size() <= 150 && request.resource.data.note.size() <= 1500
+        && request.resource.data.language in ['he','ar','en'] && request.resource.data.status == 'new'
+        && request.resource.data.source == 'donation-page' && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if admin();
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

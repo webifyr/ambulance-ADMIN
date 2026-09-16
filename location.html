@@ -2,5 +2,28 @@
 <main class="card"><div class="top"><div class="langs"><button data-lang="en">EN</button><button data-lang="ar">AR</button><button data-lang="he" class="active">HE</button></div><div class="brand"><div><b>AMBULANCE ERON</b><span>אמבולנס עירון רפואי</span></div><img src="assets/logo.jpeg" alt="Ambulance Eron"></div></div>
 <button id="quickLocationBtn" class="quick-location" type="button" aria-label="Quick location"><span class="quick-icon">📍</span><span id="t-quick">שלח מיקום עכשיו</span></button><div class="target">⌖</div><h1 id="t-title"></h1><p class="sub" id="t-sub"></p>
 <div class="fields"><label><span id="t-name"></span><input id="personName" readonly></label><label><span id="t-phone"></span><input id="personPhone" readonly></label></div>
-<button id="shareBtn" class="share"><span id="t-btn"></span></button><p class="privacy">🔒 <span id="t-secure"></span></p><a class="back" href="/" id="t-back"></a>
-</main><script type="module" src="location-final10.js?v=20260917-FAST-CLEAN-FINAL10"></script></body></html>
+<button id="shareBtn" class="share"><span id="t-btn"></span></button><button id="locationHelpBtn" class="location-help" type="button">⚙️ <span id="t-help">בעיה בהרשאת מיקום?</span></button><p class="privacy">🔒 <span id="t-secure"></span></p><a class="back" href="/" id="t-back"></a>
+</main>
+<div id="helpModal" class="help-modal" hidden>
+  <div class="help-sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button id="closeHelp" class="help-close" type="button" aria-label="Close">×</button>
+    <h2 id="helpTitle">הפעלת מיקום</h2>
+    <p id="helpIntro" class="help-intro">בחר את סוג הטלפון שלך</p>
+    <div class="device-picker" id="devicePicker">
+      <button class="device-btn" data-device="iphone" type="button"><span class="device-logo"></span><b>iPhone</b></button>
+      <button class="device-btn" data-device="samsung" type="button"><span class="device-logo">S</span><b>Samsung Galaxy</b></button>
+    </div>
+    <div id="guideIphone" class="device-guide" hidden>
+      <h3> iPhone</h3>
+      <div class="guide-step"><div class="phone-visual ios"><div class="browser-bar">aA &nbsp; ambulance-eron.web.app</div><div class="mini-menu"><b>Website Settings</b><span>Location &nbsp; ›</span></div></div><div><b class="step-title">1. פתח הגדרות האתר</b><p class="step-text">ב-Safari לחץ על aA ליד כתובת האתר ובחר Website Settings.</p></div></div>
+      <div class="guide-step"><div class="phone-visual ios"><div class="settings-row"><span>📍 Location</span><b>Allow ✓</b></div></div><div><b class="step-title">2. אפשר Location</b><p class="step-text">בחר Allow כדי לאפשר לאתר להשתמש במיקום.</p></div></div>
+    </div>
+    <div id="guideSamsung" class="device-guide" hidden>
+      <h3>Samsung Galaxy</h3>
+      <div class="guide-step"><div class="phone-visual android"><div class="browser-bar">🔒 ambulance-eron.web.app</div><div class="mini-menu"><b>Permissions</b><span>Location</span></div></div><div><b class="step-title">1. פתח הרשאות האתר</b><p class="step-text">ב-Chrome לחץ על הסמל ליד כתובת האתר ואז Permissions.</p></div></div>
+      <div class="guide-step"><div class="phone-visual android"><div class="permission-card"><b>Location</b><span>● Allow while using the site</span></div></div><div><b class="step-title">2. אפשר מיקום</b><p class="step-text">בחר Allow while using the site והפעל Location/GPS בטלפון.</p></div></div>
+    </div>
+    <button id="retryFromHelp" class="retry-help" type="button">📍 נסה שוב לשלוח מיקום</button>
+  </div>
+</div>
+<script type="module" src="location-final11.js?v=20260917-DEVICE-GUIDE-FINAL11"></script></body></html>

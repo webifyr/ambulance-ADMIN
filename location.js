@@ -43,16 +43,26 @@ function geoError(err){
   status(err?.code===3?t('timeout'):t('unavailable'),'error');
 }
 async function savePosition(pos){
-  // Geolocation must be requested immediately from the user's tap on iOS.
-  // Authentication can finish in parallel; wait for it only when saving.
-  try { if (authReady) await authReady; else if (!auth.currentUser) await signInAnonymously(auth); }
-  catch(e){ console.error('Anonymous auth failed', e); }
-  const c=pos.coords;
-  await updateDoc(doc(db,'locationShares',shareId),{
-    status:'active', sharing:true, latitude:c.latitude, longitude:c.longitude,
-    accuracy:Math.round(c.accuracy||0), lastUpdate:serverTimestamp(), updatedAtClient:new Date().toISOString()
+  // Firestore update requires an authenticated visitor. Anonymous Auth is enough.
+  if (authReady) await authReady;
+  if (!auth.currentUser) await signInAnonymously(auth);
+
+  const c = pos.coords;
+  await updateDoc(doc(db, 'locationShares', shareId), {
+    status: 'active',
+    sharing: true,
+    latitude: c.latitude,
+    longitude: c.longitude,
+    accuracy: Math.round(c.accuracy || 0),
+    lastUpdate: serverTimestamp(),
+    userAgent: navigator.userAgent,
+    updatedAtClient: Date.now()
   });
-  hasFix=true; status(t('ok'),'success'); busy=false; $('shareBtn').disabled=false;
+
+  hasFix = true;
+  status(t('ok'), 'success');
+  busy = false;
+  $('shareBtn').disabled = false;
 }
 function requestPosition(highAccuracy=true){
   if(!navigator.geolocation) return geoError({code:2});
@@ -92,10 +102,6 @@ async function startLocation(){
 
 $('shareBtn').addEventListener('click',startLocation);
 window.addEventListener('pagehide',()=>{clearTimeout(retryTimer); if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
-document.addEventListener('visibilitychange',()=>{
-  // Resume an existing share only after permission has already produced a fix.
-  if(document.visibilityState==='visible' && hasFix && !busy) setTimeout(startLocation,250);
-});
 (async()=>{
   setLang('he');
   if(!shareId){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}
@@ -104,7 +110,5 @@ document.addEventListener('visibilitychange',()=>{
     if(!snap.exists()){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}
     const d=snap.data(); $('personName').value=d.name||''; $('personPhone').value=d.phone||'';
     status(t('idle'),'');
-    // Do not auto-request geolocation here. iOS/Samsung browsers are most reliable
-    // when the permission request is made directly from the green button tap.
   }catch(e){console.error(e); status(t('invalid'),'error');}
 })();

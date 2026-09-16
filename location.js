@@ -68,7 +68,7 @@ function requestPosition(highAccuracy=true){
   if(!navigator.geolocation) return geoError({code:2});
   navigator.geolocation.getCurrentPosition(async p=>{
     try { await savePosition(p); }
-    catch(e){ console.error(e); status(t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
+    catch(e){ console.error('LOCATION SAVE ERROR:', e); status(e?.code === 'permission-denied' ? 'Firebase: permission denied. Publish the included firestore.rules.' : t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
 
     if(watchId!==null) navigator.geolocation.clearWatch(watchId);
     // Keep updating while the emergency page is open. maximumAge allows iOS and

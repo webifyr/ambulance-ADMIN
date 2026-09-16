@@ -14,14 +14,11 @@ let hasFix = false;
 let retryTimer = null;
 let authReady = null;
 let retryCount = 0;
-let bestAccuracy = Infinity;
-let bestPosition = null;
-let refineTimer = null;
 
 const i18n = {
-  he:{dir:'rtl',title:'שיתוף מיקום עם צוות האמבולנס',sub:'המערכת מנסה לאתר ולשתף את המיקום שלך באופן אוטומטי כדי לחסוך זמן במקרה חירום.',name:'שם',phone:'מספר טלפון',btn:'📍 נסה שוב לשתף מיקום',idle:'🔴 לא ניתן לאתר את המיקום. לחץ שוב וודא ש-GPS פעיל',finding:'🟡 מאתר את המיקום שלך...',ok:'🟢 המיקום שותף בהצלחה וממשיך להתעדכן',accuracy:'דיוק משוער: {m} מטר',refining:'🟡 נמצא מיקום. משפר דיוק GPS...',denied:'גישה למיקום נחסמה. יש לאפשר Location לאתר בהגדרות הדפדפן ולנסות שוב.',unavailable:'לא הצלחנו לקבל מיקום. הפעל GPS/Location ונסה שוב.',timeout:'איתור המיקום לקח יותר מדי זמן. נסה שוב במקום פתוח.',invalid:'הקישור אינו תקין או שפג תוקפו.',secure:'המיקום משמש רק לצורך איתור הפנייה ומתן השירות.',back:'חזרה לאתר'},
-  ar:{dir:'rtl',title:'مشاركة الموقع مع طاقم الإسعاف',sub:'يحاول النظام تحديد موقعك ومشاركته تلقائيًا لتوفير الوقت في حالات الطوارئ.',name:'الاسم',phone:'رقم الهاتف',btn:'📍 إعادة محاولة مشاركة الموقع',idle:'🔴 تعذر تحديد الموقع. اضغط مرة أخرى وتأكد أن GPS يعمل',finding:'🟡 جارٍ تحديد موقعك...',ok:'🟢 تم إرسال الموقع ويستمر تحديثه',accuracy:'دقة الموقع التقريبية: {m} متر',refining:'🟡 تم العثور على الموقع. جارٍ تحسين دقة GPS...',denied:'تم رفض إذن الموقع. اسمح للموقع من إعدادات المتصفح ثم حاول مجددًا.',unavailable:'تعذر الحصول على الموقع. فعّل GPS/Location وحاول مجددًا.',timeout:'استغرق تحديد الموقع وقتًا طويلًا. حاول مرة أخرى في مكان مفتوح.',invalid:'الرابط غير صالح أو منتهي.',secure:'يستخدم الموقع فقط للوصول إليك وتقديم الخدمة.',back:'العودة للموقع'},
-  en:{dir:'ltr',title:'Share location with the ambulance team',sub:'The system automatically tries to locate and share your position to save time in an emergency.',name:'Name',phone:'Phone number',btn:'📍 Try location sharing again',idle:'🔴 Location unavailable. Tap again and make sure GPS is on',finding:'🟡 Finding your location...',ok:'🟢 Location shared successfully and updating',accuracy:'Estimated accuracy: {m} m',refining:'🟡 Location found. Improving GPS accuracy...',denied:'Location permission was denied. Allow Location for this site in browser settings and try again.',unavailable:'Could not get your location. Turn on GPS/Location and try again.',timeout:'Location request timed out. Try again in an open area.',invalid:'This link is invalid or expired.',secure:'Your location is used only to reach you and provide the service.',back:'Back to website'}
+  he:{dir:'rtl',title:'שיתוף מיקום עם צוות האמבולנס',sub:'המערכת מנסה לאתר ולשתף את המיקום שלך באופן אוטומטי כדי לחסוך זמן במקרה חירום.',name:'שם',phone:'מספר טלפון',btn:'📍 נסה שוב לשתף מיקום',idle:'🔴 לא ניתן לאתר את המיקום. לחץ שוב וודא ש-GPS פעיל',finding:'🟡 מאתר את המיקום שלך...',ok:'🟢 המיקום שותף בהצלחה וממשיך להתעדכן',denied:'גישה למיקום נחסמה. יש לאפשר Location לאתר בהגדרות הדפדפן ולנסות שוב.',unavailable:'לא הצלחנו לקבל מיקום. הפעל GPS/Location ונסה שוב.',timeout:'איתור המיקום לקח יותר מדי זמן. נסה שוב במקום פתוח.',invalid:'הקישור אינו תקין או שפג תוקפו.',secure:'המיקום משמש רק לצורך איתור הפנייה ומתן השירות.',back:'חזרה לאתר'},
+  ar:{dir:'rtl',title:'مشاركة الموقع مع طاقم الإسعاف',sub:'يحاول النظام تحديد موقعك ومشاركته تلقائيًا لتوفير الوقت في حالات الطوارئ.',name:'الاسم',phone:'رقم الهاتف',btn:'📍 إعادة محاولة مشاركة الموقع',idle:'🔴 تعذر تحديد الموقع. اضغط مرة أخرى وتأكد أن GPS يعمل',finding:'🟡 جارٍ تحديد موقعك...',ok:'🟢 تم إرسال الموقع ويستمر تحديثه',denied:'تم رفض إذن الموقع. اسمح للموقع من إعدادات المتصفح ثم حاول مجددًا.',unavailable:'تعذر الحصول على الموقع. فعّل GPS/Location وحاول مجددًا.',timeout:'استغرق تحديد الموقع وقتًا طويلًا. حاول مرة أخرى في مكان مفتوح.',invalid:'الرابط غير صالح أو منتهي.',secure:'يستخدم الموقع فقط للوصول إليك وتقديم الخدمة.',back:'العودة للموقع'},
+  en:{dir:'ltr',title:'Share location with the ambulance team',sub:'The system automatically tries to locate and share your position to save time in an emergency.',name:'Name',phone:'Phone number',btn:'📍 Try location sharing again',idle:'🔴 Location unavailable. Tap again and make sure GPS is on',finding:'🟡 Finding your location...',ok:'🟢 Location shared successfully and updating',denied:'Location permission was denied. Allow Location for this site in browser settings and try again.',unavailable:'Could not get your location. Turn on GPS/Location and try again.',timeout:'Location request timed out. Try again in an open area.',invalid:'This link is invalid or expired.',secure:'Your location is used only to reach you and provide the service.',back:'Back to website'}
 };
 let lang='he';
 function t(k){return i18n[lang][k]||k}
@@ -46,41 +43,46 @@ function geoError(err){
   status(err?.code===3?t('timeout'):t('unavailable'),'error');
 }
 async function savePosition(pos){
+  // Firestore update requires an authenticated visitor. Anonymous Auth is enough.
   if (authReady) await authReady;
   if (!auth.currentUser) await signInAnonymously(auth);
+
   const c = pos.coords;
-  const acc = Math.max(0, Math.round(c.accuracy || 0));
-  // Never replace a good GPS fix with a much worse Wi-Fi/cell fix.
-  if (hasFix && Number.isFinite(bestAccuracy) && acc > bestAccuracy * 1.35) return;
-  bestAccuracy = Math.min(bestAccuracy, acc || Infinity);
-  bestPosition = pos;
   await updateDoc(doc(db, 'locationShares', shareId), {
-    status: 'active', sharing: true, latitude: c.latitude, longitude: c.longitude,
-    accuracy: acc, lastUpdate: serverTimestamp(), userAgent: navigator.userAgent,
+    status: 'active',
+    sharing: true,
+    latitude: c.latitude,
+    longitude: c.longitude,
+    accuracy: Math.round(c.accuracy || 0),
+    lastUpdate: serverTimestamp(),
+    userAgent: navigator.userAgent,
     updatedAtClient: Date.now()
   });
+
   hasFix = true;
-  const a=t('accuracy').replace('{m}', String(acc));
-  status(t('ok') + ' — ' + a, 'success');
-  busy=false; $('shareBtn').disabled=false;
+  status(t('ok'), 'success');
+  busy = false;
+  $('shareBtn').disabled = false;
 }
 function requestPosition(highAccuracy=true){
   if(!navigator.geolocation) return geoError({code:2});
-  // Ask for a fresh high-accuracy fix. On phones this lets GPS refine over time.
   navigator.geolocation.getCurrentPosition(async p=>{
     try { await savePosition(p); }
-    catch(e){ console.error('LOCATION SAVE ERROR:',e); status(e?.code==='permission-denied'?'Firebase: permission denied. Publish the included firestore.rules.':t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
+    catch(e){ console.error('LOCATION SAVE ERROR:', e); status(e?.code === 'permission-denied' ? 'Firebase: permission denied. Publish the included firestore.rules.' : t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
+
     if(watchId!==null) navigator.geolocation.clearWatch(watchId);
-    status(t('refining') + ' — ' + t('accuracy').replace('{m}',String(Math.round(p.coords.accuracy||0))),'finding');
+    // Keep updating while the emergency page is open. maximumAge allows iOS and
+    // Samsung browsers to return a recent fix immediately while GPS refines it.
     watchId=navigator.geolocation.watchPosition(
       p=>savePosition(p).catch(console.error),
       e=>{ if(e?.code===1) geoError(e); },
-      {enableHighAccuracy:true, maximumAge:0, timeout:120000}
+      {enableHighAccuracy:true, maximumAge:10000, timeout:60000}
     );
-    // Keep refining; watchPosition remains active after this timer.
-    clearTimeout(refineTimer);
-    refineTimer=setTimeout(()=>{ if(hasFix && bestPosition) savePosition(bestPosition).catch(console.error); },20000);
-  }, geoError, {enableHighAccuracy:true, maximumAge:0, timeout:60000});
+  }, geoError, {
+    enableHighAccuracy:highAccuracy,
+    maximumAge: highAccuracy ? 15000 : 60000,
+    timeout: highAccuracy ? 30000 : 60000
+  });
 }
 async function startLocation(){
   if(busy) return;
@@ -95,11 +97,11 @@ async function startLocation(){
   if(!auth.currentUser && !authReady){
     authReady=signInAnonymously(auth).catch(e=>{ console.error(e); return null; });
   }
-  requestPosition(true);
+  requestPosition(false);
 }
 
 $('shareBtn').addEventListener('click',startLocation);
-window.addEventListener('pagehide',()=>{clearTimeout(retryTimer); clearTimeout(refineTimer); if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
+window.addEventListener('pagehide',()=>{clearTimeout(retryTimer); if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
 (async()=>{
   setLang('he');
   if(!shareId){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}

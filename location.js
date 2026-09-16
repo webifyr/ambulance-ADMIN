@@ -49,9 +49,8 @@ async function savePosition(pos){
   catch(e){ console.error('Anonymous auth failed', e); }
   const c=pos.coords;
   await updateDoc(doc(db,'locationShares',shareId),{
-    status:'live', sharing:true, latitude:c.latitude, longitude:c.longitude,
-    accuracy:Math.round(c.accuracy||0), altitude:c.altitude??null, heading:c.heading??null, speed:c.speed??null,
-    updatedAt:serverTimestamp(), lastSeenAt:serverTimestamp()
+    status:'active', sharing:true, latitude:c.latitude, longitude:c.longitude,
+    accuracy:Math.round(c.accuracy||0), lastUpdate:serverTimestamp(), updatedAtClient:new Date().toISOString()
   });
   hasFix=true; status(t('ok'),'success'); busy=false; $('shareBtn').disabled=false;
 }
@@ -93,8 +92,10 @@ async function startLocation(){
 
 $('shareBtn').addEventListener('click',startLocation);
 window.addEventListener('pagehide',()=>{clearTimeout(retryTimer); if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !hasFix && !busy) setTimeout(startLocation,250); });
-window.addEventListener('pageshow',()=>{ if(!hasFix && !busy) setTimeout(startLocation,250); });
+document.addEventListener('visibilitychange',()=>{
+  // Resume an existing share only after permission has already produced a fix.
+  if(document.visibilityState==='visible' && hasFix && !busy) setTimeout(startLocation,250);
+});
 (async()=>{
   setLang('he');
   if(!shareId){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}
@@ -102,9 +103,8 @@ window.addEventListener('pageshow',()=>{ if(!hasFix && !busy) setTimeout(startLo
     const snap=await getDoc(doc(db,'locationShares',shareId));
     if(!snap.exists()){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}
     const d=snap.data(); $('personName').value=d.name||''; $('personPhone').value=d.phone||'';
-    status(t('finding'),'finding');
-    // Emergency flow: request/start location automatically as soon as the page opens.
-    // Browsers/OS may still show their mandatory one-time permission prompt; websites cannot bypass it.
-    setTimeout(startLocation, 150);
+    status(t('idle'),'');
+    // Do not auto-request geolocation here. iOS/Samsung browsers are most reliable
+    // when the permission request is made directly from the green button tap.
   }catch(e){console.error(e); status(t('invalid'),'error');}
 })();

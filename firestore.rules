@@ -67,15 +67,22 @@ service cloud.firestore {
       allow get: if true;
       allow create, delete: if admin();
       allow update: if admin() || (signedIn()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['latitude','longitude','accuracy','status','sharing','lastUpdate','openedAt','stoppedAt','userAgent','updatedAtClient'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'latitude','longitude','accuracy','status','sharing','lastUpdate',
+          'openedAt','stoppedAt','userAgent','updatedAtClient'
+        ])
         && request.resource.data.name == resource.data.name
         && request.resource.data.phone == resource.data.phone
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.latitude is number && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90
-        && request.resource.data.longitude is number && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180
-        && request.resource.data.accuracy is number && request.resource.data.accuracy >= 0
         && request.resource.data.status in ['waiting','requesting_permission','active','stopped']
-        && request.resource.data.sharing == true);
+        && request.resource.data.sharing is bool
+        && (!request.resource.data.keys().hasAny(['latitude']) ||
+            (request.resource.data.latitude is number && request.resource.data.latitude >= -90 && request.resource.data.latitude <= 90))
+        && (!request.resource.data.keys().hasAny(['longitude']) ||
+            (request.resource.data.longitude is number && request.resource.data.longitude >= -180 && request.resource.data.longitude <= 180))
+        && (!request.resource.data.keys().hasAny(['accuracy']) ||
+            (request.resource.data.accuracy is number && request.resource.data.accuracy >= 0))
+      );
     }
 
     match /ambulanceChecks/{checkId} { allow read, create, update, delete: if admin(); }

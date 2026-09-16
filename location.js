@@ -10,6 +10,8 @@ const $ = id => document.getElementById(id);
 const shareId = new URLSearchParams(location.search).get('id') || '';
 let watchId = null;
 let busy = false;
+let hasFix = false;
+let retryTimer = null;
 
 const i18n = {
   he:{dir:'rtl',title:'שיתוף מיקום עם צוות האמבולנס',sub:'המערכת מנסה לאתר ולשתף את המיקום שלך באופן אוטומטי כדי לחסוך זמן במקרה חירום.',name:'שם',phone:'מספר טלפון',btn:'📍 נסה שוב לשתף מיקום',idle:'🔴 לא ניתן לאתר את המיקום. לחץ שוב וודא ש-GPS פעיל',finding:'🟡 מאתר את המיקום שלך...',ok:'🟢 המיקום שותף בהצלחה וממשיך להתעדכן',denied:'גישה למיקום נחסמה. יש לאפשר Location לאתר בהגדרות הדפדפן ולנסות שוב.',unavailable:'לא הצלחנו לקבל מיקום. הפעל GPS/Location ונסה שוב.',timeout:'איתור המיקום לקח יותר מדי זמן. נסה שוב במקום פתוח.',invalid:'הקישור אינו תקין או שפג תוקפו.',secure:'המיקום משמש רק לצורך איתור הפנייה ומתן השירות.',back:'חזרה לאתר'},
@@ -21,7 +23,23 @@ function t(k){return i18n[lang][k]||k}
 function setLang(v){lang=v; document.documentElement.lang=v; document.documentElement.dir=i18n[v].dir; document.body.dir=i18n[v].dir; ['title','sub','name','phone','btn','secure','back'].forEach(k=>{const el=$('t-'+k); if(el) el.textContent=t(k)}); document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('active',b.dataset.lang===v));}
 document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
 function status(msg,cls=''){ $('status').textContent=msg; $('status').className='status '+cls; }
-function geoError(err){ if(err?.code===1) status(t('denied'),'error'); else if(err?.code===3) status(t('timeout'),'error'); else status(t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; }
+function geoError(err){
+  console.warn('Geolocation error', err);
+  busy=false; $('shareBtn').disabled=false;
+  if(err?.code===1){
+    status(t('denied'),'error');
+    return;
+  }
+  // iPhone/Samsung can fail a high-accuracy GPS request indoors. Retry once using
+  // Wi-Fi/cell positioning instead of showing an error immediately.
+  if(!hasFix){
+    status(t('finding'),'finding');
+    clearTimeout(retryTimer);
+    retryTimer=setTimeout(()=>requestPosition(false),900);
+    return;
+  }
+  status(err?.code===3?t('timeout'):t('unavailable'),'error');
+}
 async function savePosition(pos){
   const c=pos.coords;
   await updateDoc(doc(db,'locationShares',shareId),{
@@ -29,23 +47,46 @@ async function savePosition(pos){
     accuracy:Math.round(c.accuracy||0), altitude:c.altitude??null, heading:c.heading??null, speed:c.speed??null,
     updatedAt:serverTimestamp(), lastSeenAt:serverTimestamp()
   });
-  status(t('ok'),'success'); busy=false; $('shareBtn').disabled=false;
+  hasFix=true; status(t('ok'),'success'); busy=false; $('shareBtn').disabled=false;
+}
+function requestPosition(highAccuracy=true){
+  if(!navigator.geolocation) return geoError({code:2});
+  navigator.geolocation.getCurrentPosition(async p=>{
+    try { await savePosition(p); }
+    catch(e){ console.error(e); status(t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
+
+    if(watchId!==null) navigator.geolocation.clearWatch(watchId);
+    // Keep updating while the emergency page is open. maximumAge allows iOS and
+    // Samsung browsers to return a recent fix immediately while GPS refines it.
+    watchId=navigator.geolocation.watchPosition(
+      p=>savePosition(p).catch(console.error),
+      e=>{ if(e?.code===1) geoError(e); },
+      {enableHighAccuracy:true, maximumAge:10000, timeout:60000}
+    );
+  }, geoError, {
+    enableHighAccuracy:highAccuracy,
+    maximumAge: highAccuracy ? 15000 : 60000,
+    timeout: highAccuracy ? 30000 : 60000
+  });
 }
 async function startLocation(){
   if(busy) return;
   if(!shareId){status(t('invalid'),'error'); return;}
-  if(!window.isSecureContext){status('Location requires HTTPS.','error'); return;}
+  if(!window.isSecureContext){status('יש לפתוח את הקישור דרך HTTPS כדי לאפשר GPS.','error'); return;}
   if(!navigator.geolocation){status(t('unavailable'),'error'); return;}
   busy=true; $('shareBtn').disabled=true; status(t('finding'),'finding');
-  try { if(!auth.currentUser) await signInAnonymously(auth); } catch(e){ console.error(e); }
-  navigator.geolocation.getCurrentPosition(async p=>{
-    try { await savePosition(p); } catch(e){ console.error(e); status(t('unavailable'),'error'); busy=false; $('shareBtn').disabled=false; return; }
-    if(watchId!==null) navigator.geolocation.clearWatch(watchId);
-    watchId=navigator.geolocation.watchPosition(p=>savePosition(p).catch(console.error), geoError,{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
-  },geoError,{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  try { if(!auth.currentUser) await signInAnonymously(auth); }
+  catch(e){ console.error(e); }
+
+  // Works on Safari/iPhone and Samsung Internet/Chrome. The OS/browser itself
+  // still controls the one-time permission prompt; a website cannot bypass it.
+  requestPosition(true);
 }
+
 $('shareBtn').addEventListener('click',startLocation);
-window.addEventListener('pagehide',()=>{if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
+window.addEventListener('pagehide',()=>{clearTimeout(retryTimer); if(watchId!==null) navigator.geolocation.clearWatch(watchId)});
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible' && !hasFix && !busy) setTimeout(startLocation,250); });
+window.addEventListener('pageshow',()=>{ if(!hasFix && !busy) setTimeout(startLocation,250); });
 (async()=>{
   setLang('he');
   if(!shareId){status(t('invalid'),'error'); $('shareBtn').disabled=true; return;}
